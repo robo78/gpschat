@@ -1,0 +1,5 @@
+{$GPSCHAT_DOMAIN} {
+	reverse_proxy api:8080 {
+		header_up X-Real-IP {remote_host}
+	}
+}

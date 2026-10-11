@@ -1,0 +1,35 @@
+services:
+  api:
+    build: ../backend
+    restart: unless-stopped
+    environment:
+      GPSCHAT_ADMIN_TOKEN: ${GPSCHAT_ADMIN_TOKEN:?Set an admin token in the deployment environment}
+      GPSCHAT_TRUSTED_PROXIES: 172.16.0.0/12,192.168.0.0/16,10.0.0.0/8
+    volumes:
+      - messages:/data
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  https:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      GPSCHAT_DOMAIN: ${GPSCHAT_DOMAIN:?Set your domain in the deployment environment}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - certificates:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+volumes:
+  messages:
+  certificates:
+  caddy-config:
